@@ -1,0 +1,50 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)
+  })
+```
+```{r}
+#| label: Australia tibble
+
+Australia <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lewis Hamilton", "Fernando Alonso", "Lance Stroll", "Sergio Perez", "Lando Norris", "Nico Hulkenberg", "Oscar Piastri", "Zhou Guanyu", "Yuki Tsunoda", "Valtteri Bottas", "Carlos Sainz", "Pierre Gasly", "Esteban Ocon", "Nyck de Vries", "Logan Sargeant", "Kevin Magnussen", "George Russell", "Charles Leclerc", "Alex Albon"),
+  Team = c("Red Bull Racing", "Mercedes", "Aston Martin", "Aston Martin", "Red Bull Racing", "McLaren", "Haas", "McLaren", "Alfa Romeo", "RB", "Alfa Romeo", "Ferrari", "Alpine", "Alpine", "RB", "Williams", "Haas", "Mercedes", "Ferrari", "Williams"),
+  Laps = c(58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 18, 1, 1),
+  Time_Retired = c("1:33:56.726", "1:33:58.715", "1:34:10.444", "1:34:20.758", "1:34:22.936", "1:34:28.452", "1:34:35.729", "1:34:37.155", "1:34:38.590", "1:34:40.786", "1:34:42.990", "1:34:45.379", "1:34:47.874", "1:34:50.253", "1:34:52.632", "1:34:55.020", "1:34:57.409", "DNF", "DNF", "DNF"),
+  Gap = c("0s", "+1.989s", "+13.718s", "+24.032s", "+26.210s", "+31.726s", "+39.003s", "+40.429s", "+41.864s", "+44.060s", "+46.264s", "+48.653s", "+51.148s", "+53.527s", "+55.906s", "+58.294s", "+60.683s", "DNF", "DNF", "DNF"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(140.6, 139.3, 139.1, 138.7, 138.5, 138.3, 138.0, 137.8, 137.6, 137.4, 137.2, 137.0, 136.8, 136.6, 136.4, 136.2, 136.0, 0, 0, 0)
+)
+
+Australia$Time_Retired[Australia$Time_Retired == "DNF"] <- 0
+Australia$Gap[Australia$Gap == "0s"] <- NA
+Australia <- Australia %>%
+  arrange(Time_Retired)
+
+```
+
+```{r}
+#| label: Australia plot
+ggplot(Australia, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Australian GP 2023",
+       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
+       x = "Driver",
+       y = "Finishing Time",
+       color = NA)+
+  guides(fill = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+[Data](https://www.motorsport.com/f1/results/2023/australian-gp-625276/)

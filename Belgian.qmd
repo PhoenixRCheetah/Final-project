@@ -1,0 +1,49 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)
+  })
+```
+
+```{r}
+#|label: Belgian tibble
+Belgian <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Sergio Perez", "Charles Leclerc", "Lewis Hamilton", "Fernando Alonso", "George Russell", "Lando Norris", "Esteban Ocon", "Lance Stroll", "Yuki Tsunoda", "Pierre Gasly", "Valtteri Bottas", "Zhou Guanyu", "Alexander Albon", "Kevin Magnussen", "Daniel Ricciardo", "Logan Sargeant", "Nico Hulkenberg", "Carlos Sainz", "Oscar Piastri"),
+  Team = c("Red Bull Racing", "Red Bull Racing", "Ferrari", "Mercedes", "Aston Martin", "Mercedes", "McLaren", "Alpine", "Aston Martin", "RB", "Alpine", "Alfa Romeo", "Alfa Romeo", "Williams", "Haas", "RB", "Williams", "Haas", "Ferrari", "McLaren"),
+  Laps = c(44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 23, 1),
+  Time_Retired = c("1:22:30.450", "1:22:52.755", "1:23:02.709", "1:23:20.121", "1:23:26.634", "1:23:33.551", "1:23:44.169", "1:23:45.169", "1:23:49.790", "1:23:50.671", "1:23:53.534", "1:23:55.641", "1:24:05.891", "1:24:06.634", "1:24:12.204", "1:24:13.521", "1:24:14.926", "1:24:20.900", "DNF", "DNF"),
+  Gap = c(NA, "+22.305s", "+32.259s", "+49.671s", "+56.184s", "+1:03.101", "+1:13.719", "+1:14.719", "+1:19.340", "+1:20.221", "+1:23.084", "+1:25.191", "+1:35.441", "+1:36.184", "+1:41.754", "+1:43.071", "+1:44.476", "+1:50.450", "DNF", "DNF"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(224.017, 223.012, 222.567, 221.792, 221.503, 221.197, 220.730, 220.686, 220.483, 220.445, 220.319, 220.227, 219.780, 219.747, 219.505, 219.448, 219.387, 219.128, 215.114, NA)
+)
+Belgian$Time_Retired[Belgian$Time_Retired == "DNF"] <- 0
+Belgian$Gap[Belgian$Gap == "0s"] <- NA
+Belgian <- Belgian %>%
+  arrange(Time_Retired)
+```
+
+```{r}
+#|label: Belgian plot
+ggplot(Belgian, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Belgian GP 2023",
+       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
+       x = "Driver",
+       y = "Finishing Time",
+       color = NA) +
+  guides(fill = FALSE) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+[Data](https://www.motorsport.com/f1/results/2023/belgian-gp-625329/)

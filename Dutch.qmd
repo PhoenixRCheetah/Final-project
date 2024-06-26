@@ -1,0 +1,50 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)
+  })
+```
+
+```{r}
+#|label: Dutch tibble
+Dutch <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Fernando Alonso", "Pierre Gasly", "Sergio Perez", "Carlos Sainz", "Lewis Hamilton", "Lando Norris", "Alex Albon", "Oscar Piastri", "Esteban Ocon", "Lance Stroll", "Nico Hulkenberg", "Liam Lawson", "Kevin Magnussen", "Valtteri Bottas", "Zhou Guanyu", "George Russell", "Charles Leclerc", "Logan Sargeant", "Yuki Tsunoda"),
+  Team = c("Red Bull Racing", "Aston Martin", "Alpine", "Red Bull Racing", "Ferrari", "Mercedes", "McLaren", "Williams", "McLaren", "Alpine", "Aston Martin", "Haas", "RB", "Haas", "Alfa Romeo", "Alfa Romeo", "Mercedes", "Ferrari", "Williams", "RB"),
+  Laps = c(72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 65, 41, 16, 13),
+  Time_Retired = c("1:36:42.773", "1:36:46.517", "1:36:49.831", "1:36:52.841", "1:36:55.314", "1:36:55.982", "1:36:56.005", "1:36:57.928", "1:36:59.353", "1:37:01.119", "1:37:02.860", "1:37:07.338", "1:37:08.920", "1:37:09.407", "1:37:10.304", "1:37:10.623", "DNF", "DNF", "DNF", "DNF"),
+  Gap = c(NA, "+3.744s", "+7.058s", "+10.068s", "+12.541s", "+13.209s", "+13.232s", "+15.155s", "+16.580s", "+18.346s", "+20.087s", "+24.565s", "+26.147s", "+26.634s", "+27.531s", "+27.850s", "DNF", "DNF", "DNF", "DNF"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(79.4, 79.3, 79.3, 79.2, 79.1, 79.1, 79.1, 79.1, 79.0, 79.0, 79.0, 79.0, 79.0, 79.0, 79.0, 79.0, 78.9, 113.0, 109.0, 102.3)
+)
+
+Dutch$Time_Retired[Dutch$Time_Retired == "DNF"] <- 0
+Dutch$Gap[Dutch$Gap == "0s"] <- NA
+Dutch <- Dutch %>%
+  arrange(Time_Retired)
+```
+
+```{r}
+#|label: Dutch plot
+ggplot(Dutch, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Dutch GP 2023",
+       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
+       x = "Driver",
+       y = "Finishing Time",
+       color = NA) +
+  guides(fill = FALSE) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+[Data](https://www.motorsport.com/f1/results/2023/dutch-gp-625333/)
