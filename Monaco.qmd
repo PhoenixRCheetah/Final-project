@@ -1,0 +1,48 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)
+  })
+```
+
+```{r}
+#|label: Monaco tibble
+Monaco <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Fernando Alonso", "Esteban Ocon", "Lewis Hamilton", "George Russell", "Charles Leclerc", "Pierre Gasly", "Carlos Sainz", "Lando Norris", "Oscar Piastri", "Valtteri Bottas", "Nyck de Vries", "Zhou Guanyu", "Alex Albon", "Yuki Tsunoda", "Sergio Perez", "Nico Hülkenberg", "Lance Stroll", "Logan Sargeant", "Kevin Magnussen"),
+  Team = c("Red Bull Racing", "Aston Martin", "Alpine", "Mercedes", "Mercedes", "Ferrari", "Alpine", "Ferrari", "McLaren", "McLaren", "Alfa Romeo", "RB", "Alfa Romeo", "Williams", "RB", "Red Bull Racing", "Haas", "Aston Martin", "Williams", "Haas"),
+  Laps = c(78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78),
+  Time_Retired = c("1:48:51.980", "1:49:12.800", "1:49:22.504", "1:49:26.060", "1:49:27.513", "1:49:29.061", "1:49:30.132", "1:49:31.621", "1:49:32.925", "1:49:34.312", "1:49:35.545", "1:49:36.759", "1:49:38.189", "1:49:40.109", "1:49:41.215", "1:49:42.398", "1:49:43.549", "1:49:45.759", "1:49:47.189", "1:49:48.569"),
+  Gap = c("0s", "+20.820s", "+30.524s", "+34.080s", "+35.533s", "+37.081s", "+38.132s", "+39.621s", "+40.925s", "+42.312s", "+43.545s", "+44.759s", "+46.189s", "+48.109s", "+49.215s", "+50.398s", "+51.549s", "+53.759s", "+55.189s", "+56.569s"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(120.3, 120.0, 119.5, 119.4, 119.3, 119.3, 119.2, 119.1, 119.0, 118.9, 118.8, 118.8, 118.7, 118.7, 118.6, 118.5, 118.5, 118.4, 118.3, 118.2)
+)
+Monaco$Time_Retired[Monaco$Time_Retired == "DNF"] <- 0
+Monaco$Gap[Monaco$Gap == "0s"] <- NA
+Monaco <- Monaco %>%
+  arrange(Time_Retired)
+```
+
+```{r}
+#| label: Monaco plot
+ggplot(Monaco, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Monaco GP 2023",
+       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
+       x = "Driver",
+       y = "Finishing Time",
+       color = NA)+
+  guides(fill = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+[Data](https://www.motorsport.com/f1/results/2023/monaco-gp-625296/)

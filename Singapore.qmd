@@ -1,0 +1,48 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)
+  })
+```
+
+```{r}
+#|label: Singapore tibble
+Singapore <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19),
+  Driver = c("Carlos Sainz", "Lando Norris", "Lewis Hamilton", "Charles Leclerc", "Max Verstappen", "Pierre Gasly", "Oscar Piastri", "Sergio Perez", "Liam Lawson", "Kevin Magnussen", "Alexander Albon", "Zhou Guanyu", "Logan Sargeant", "Fernando Alonso", "George Russell", "Esteban Ocon", "Valtteri Bottas", "Nico Hulkenberg", "Yuki Tsunoda"),
+  Team = c("Ferrari", "McLaren", "Mercedes", "Ferrari", "Red Bull Racing", "Alpine", "McLaren", "Red Bull Racing", "RB", "Haas", "Williams", "Alfa Romeo", "Williams", "Aston Martin", "Mercedes", "Alpine", "Alfa Romeo", "Haas", "RB"),
+  Laps = c(62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 61, 51, 42, 0),
+  Time_Retired = c("1:46:37.418", "1:46:38.230", "1:46:38.687", "1:46:58.595", "1:46:58.859", "1:47:15.859", "1:47:18.897", "1:47:36.952", "1:47:43.336", "1:47:49.534", "1:47:50.835", "1:48:01.067", "1:48:03.619", "1:48:03.619", "1:48:05.021", "DNF", "DNF", "DNF", "DNF"),
+  Gap = c("+0s", "+0.812s", "+1.269s", "+21.177s", "+21.441s", "+38.441s", "+41.479s", "+59.534s", "+1:05.918s", "+1:12.116s", "+1:13.417s", "+1:23.649s", "+1:26.201s", "+1:26.201s", "+1:27.603s", "+DNF", "+DNF", "+DNF", "+DNF"),
+  Points = c(25, 18, 16, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(107.2, 107.1, 107, 106.7, 106.7, 106.4, 106.3 , 106, 105.9, 105.8 , 105.7 , 105.6, 105.5 , 105.5 , 105.5 , 106.9, 104.7 , 105.8, NA)
+)
+Singapore$Time_Retired[Singapore$Time_Retired == "DNF"] <- 0
+Singapore$Gap[Singapore$Gap == "0s"] <- NA
+Singapore <- Singapore %>%
+  arrange(Time_Retired)
+```
+
+```{r}
+#|label: Singapore plot
+ggplot(Singapore, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Singapore GP 2023",
+       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
+       x = "Driver",
+       y = "Finishing Time",
+       color = NA) +
+  guides(fill = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+[Data](https://www.motorsport.com/f1/results/2023/singapore-gp-625341/)

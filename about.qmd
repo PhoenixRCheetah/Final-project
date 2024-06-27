@@ -1,0 +1,9 @@
+---
+title: "About"
+---
+
+Email: toroshan2010@gmail.com
+
+[Github]({https://github.com/PhoenixRCheetah/Final-project})
+
+[Course Homepage]({https://bootcamp.davidkane.info/})

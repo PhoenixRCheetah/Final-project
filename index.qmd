@@ -1,0 +1,22 @@
+## Introduction
+Based on data from [motorsport.com](https://www.motorsport.com/f1/results/2023/bahrain-gp-625268/), a comprehensive analysis of trends and performance metrics from the 2023 Formula 1 season reveals that Max Verstappen has emerged as the ultimate driver on the track, demonstrating exceptional dominance throughout the season.
+
+## Terminolgy
+"DNS" (Did Not Start) refers to a situation where a driver or a team does not participate in a race despite being registered or expected to compete. This could be due to one of the following reasons:
+
+* Mechanical Issues: The race car might encounter technical problems or mechanical failures during practice sessions or qualifying, preventing it from starting the race.
+
+* Driver Injury or Illness: If the driver is injured or becomes ill before the race, they might be unable to participate.
+
+
+"DNF" (Did Not Finish) indicates that a driver or a team started the race but did not complete it. There are several reasons why a participant might receive a DNF:
+
+* Mechanical Failure: The race car might suffer from a mechanical issue such as engine failure, transmission problems, or other critical component malfunctions.
+
+* Accidents: Crashes or collisions with other vehicles or barriers can cause significant damage, making it impossible for the car to continue the race.
+
+* Health Issues: If the driver experiences health problems during the race, they may be forced to retire from the event.
+
+* Rules Violations: In some cases, teams may be disqualified or choose to retire due to infractions of the rules, leading to a DNF.
+
+When a driver or team is marked as DNF, it means they were unable to complete the race, and their final position is recorded based on the number of laps they completed before retiring.

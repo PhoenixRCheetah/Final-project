@@ -1,0 +1,4 @@
+- source: project
+  quarto-pub:
+    - id: c68723d4-5381-4b8c-ae5b-347f4faf8f12
+      url: 'https://thematrix.quarto.pub/formula-1-data-analysis-for-the-2023-season'
