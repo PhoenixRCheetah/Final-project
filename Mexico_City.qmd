@@ -11,7 +11,10 @@ execute:
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
-  library(ggplot2)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
@@ -34,6 +37,53 @@ Mexico_City$Gap[Mexico_City$Gap == "0s"] <- NA
 Mexico_City <- Mexico_City %>%
   arrange(Time_Retired)
 
+Mexico_City$Driver <- factor(Mexico_City$Driver, levels = Mexico_City$Driver[order(Mexico_City$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Mexico_City <- Mexico_City %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Mexico_City$Team <- as.factor(Mexico_City$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Mexico_City,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
+Mexico_City <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lewis Hamilton", "Charles Leclerc", "Sergio Perez", "Carlos Sainz", "Lando Norris", "George Russell", "Fernando Alonso", "Esteban Ocon", "Valtteri Bottas", "Pierre Gasly", "Alex Albon", "Oscar Piastri", "Kevin Magnussen", "Lance Stroll", "Nico Hülkenberg", "Yuki Tsunoda", "Zhou Guanyu", "Logan Sargeant", "Nyck de Vries"),
+  Team = c("Red Bull Racing", "Mercedes", "Ferrari", "Red Bull Racing", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpine", "Alfa Romeo", "Alpine", "Williams", "McLaren", "Haas", "Aston Martin", "Haas", "AlphaTauri", "Alfa Romeo", "Williams", "AlphaTauri"),
+  Laps = c(71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71),
+  Time_Retired = c("1:36:19.734", "1:36:29.835", "1:36:34.259", "1:36:37.401", "1:36:40.813", "1:36:45.932", "1:36:49.101", "1:36:52.563", "1:36:55.134", "1:36:58.237", "1:37:01.459", "1:37:04.761", "1:37:07.892", "1:37:11.093", "1:37:14.299", "1:37:17.491", "1:37:20.674", "1:37:24.901", "1:37:28.134", "1:37:31.567"),
+  Gap = c("0s", "+10.101s", "+14.525s", "+17.667s", "+20.879s", "+26.098s", "+29.267s", "+32.729s", "+35.300s", "+38.403s", "+41.625s", "+44.927s", "+48.058s", "+51.259s", "+54.465s", "+57.657s", "+60.840s", "+65.067s", "+68.300s", "+71.733s"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(131.5, 131.3, 130.8, 130.6, 130.3, 130.0, 129.8, 129.7, 129.4, 129.3, 129.0, 128.9, 128.7, 128.5, 128.3, 128.1, 127.9, 127.7, 127.6, 127.5)
+)
+
+Mexico_City$Time_Retired[Mexico_City$Time_Retired == "DNF"] <- 0
+Mexico_City$Gap[Mexico_City$Gap == "0s"] <- NA
+Mexico_City <- Mexico_City %>%
+  arrange(Time_Retired)
 ```
 
 ```{r}

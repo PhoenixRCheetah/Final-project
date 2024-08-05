@@ -11,7 +11,10 @@ execute:
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
-  library(ggplot2)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
@@ -22,6 +25,7 @@ Italian <- tibble(
   Driver = c("Max Verstappen", "Sergio Perez", "Carlos Sainz", "Charles Leclerc", "George Russell", "Lewis Hamilton", "Alex Albon", "Lando Norris", "Fernando Alonso", "Valtteri Bottas", "Oscar Piastri", "Liam Lawson", "Logan Sargeant", "Zhou Guanyu", "Pierre Gasly", "Esteban Ocon", "Kevin Magnussen", "Lance Stroll", "Nico Hulkenberg", "Yuki Tsunoda"),
   Team = c("Red Bull Racing", "Red Bull Racing", "Ferrari", "Ferrari", "Mercedes", "Mercedes", "Williams", "McLaren", "Aston Martin", "Alfa Romeo", "McLaren", "RB", "Williams", "Alfa Romeo", "Alpine", "Alpine", "Haas", "Aston Martin", "Haas", "RB"),
   Laps = c(51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 50, 0),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
   Time_Retired = c("1:13:41.143", "1:13:47.207", "1:13:52.336", "1:13:52.520", "1:14:04.846", "1:14:23.822", "1:14:26.357", "1:14:27.098", "1:14:27.246", "1:14:32.552", "1:14:33.396", "1:14:36.661", "1:14:43.740", "1:14:43.973", "1:14:46.958", "1:14:47.517", "1:14:49.254", "1:14:50.097", "DNF", "DNF"),
   Gap = c("0s", "+6.064s", "+11.193s", "+11.377s", "+23.703s", "+42.679s", "+45.214s", "+45.955s", "+46.103s", "+51.409s", "+52.253s", "+55.518s", "+62.597s", "+62.830s", "+65.815s", "+66.374s", "+68.111s", "+68.954s", "DNF", "DNS"),
   Speed_mph = c(151.423, 151.027, 150.805, 150.788, 150.420, 149.693, 149.554, 149.516, 149.507, 149.322, 149.293, 149.100, 148.401, 148.384, 148.105, 148.057, 147.904, 147.769, 145.2, NA)
@@ -32,6 +36,54 @@ Italian$Gap[Italian$Gap == "0s"] <- NA
 Italian <- Italian %>%
   arrange(Time_Retired)
 
+Italian$Driver <- factor(Italian$Driver, levels = Italian$Driver[order(Italian$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Italian <- Italian %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Italian$Team <- as.factor(Italian$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Italian,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+
+```
+
+```{r}
+Italian <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Sergio Perez", "Carlos Sainz", "Charles Leclerc", "George Russell", "Lewis Hamilton", "Alex Albon", "Lando Norris", "Fernando Alonso", "Valtteri Bottas", "Oscar Piastri", "Liam Lawson", "Logan Sargeant", "Zhou Guanyu", "Pierre Gasly", "Esteban Ocon", "Kevin Magnussen", "Lance Stroll", "Nico Hulkenberg", "Yuki Tsunoda"),
+  Team = c("Red Bull Racing", "Red Bull Racing", "Ferrari", "Ferrari", "Mercedes", "Mercedes", "Williams", "McLaren", "Aston Martin", "Alfa Romeo", "McLaren", "RB", "Williams", "Alfa Romeo", "Alpine", "Alpine", "Haas", "Aston Martin", "Haas", "RB"),
+  Laps = c(51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 50, 0),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Time_Retired = c("1:13:41.143", "1:13:47.207", "1:13:52.336", "1:13:52.520", "1:14:04.846", "1:14:23.822", "1:14:26.357", "1:14:27.098", "1:14:27.246", "1:14:32.552", "1:14:33.396", "1:14:36.661", "1:14:43.740", "1:14:43.973", "1:14:46.958", "1:14:47.517", "1:14:49.254", "1:14:50.097", "DNF", "DNF"),
+  Gap = c("0s", "+6.064s", "+11.193s", "+11.377s", "+23.703s", "+42.679s", "+45.214s", "+45.955s", "+46.103s", "+51.409s", "+52.253s", "+55.518s", "+62.597s", "+62.830s", "+65.815s", "+66.374s", "+68.111s", "+68.954s", "DNF", "DNS"),
+  Speed_mph = c(151.423, 151.027, 150.805, 150.788, 150.420, 149.693, 149.554, 149.516, 149.507, 149.322, 149.293, 149.100, 148.401, 148.384, 148.105, 148.057, 147.904, 147.769, 145.2, NA)
+)
+
+Italian$Time_Retired[Italian$Time_Retired == "DNF"] <- 0
+Italian$Gap[Italian$Gap == "0s"] <- NA
+Italian <- Italian %>%
+  arrange(Time_Retired)
 ```
 
 ```{r}
@@ -47,3 +99,7 @@ ggplot(Italian, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fil
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 [Data](https://www.motorsport.com/f1/results/2023/italian-gp-625337/)
+```{r}
+fixef(fit_race_1)
+```
+
