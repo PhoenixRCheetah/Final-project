@@ -15,4 +15,7 @@ Data is from [motorsport.com](https://motorsport.com)
 ## Findings
 
 Our analysis reveals that Max Verstappen, a driver for Red Bull, is statistically the best driver in the 2023 Formula 1 season.
+<<<<<<< HEAD
 
+=======
+>>>>>>> b7fa3d14faeb651e4439363bc354d04c09917d13
