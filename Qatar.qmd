@@ -11,12 +11,63 @@ execute:
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
-  library(ggplot2)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
 ```{r}
 #| label: Qatar tibble
+Qatar <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Oscar Piastri", "Lando Norris", "George Russell", "Charles Leclerc", "Fernando Alonso", "Esteban Ocon", "Valtteri Bottas", "Zhou Guanyu", "Sergio Perez", "Lance Stroll", "Pierre Gasly", "Alex Albon", "Kevin Magnussen", "Yuki Tsunoda", "Nico Hulkenberg", "Liam Lawson", "Logan Sargeant", "Lewis Hamilton", "Carlos Sainz"),
+  Team = c("Red Bull Racing", "McLaren", "McLaren", "Mercedes", "Ferrari", "Aston Martin", "Alpine", "Alfa Romeo", "Alfa Romeo", "Red Bull Racing", "Aston Martin", "Alpine", "Williams", "Haas", "AlphaTauri", "Haas", "AlphaTauri", "Williams", "Mercedes", "Ferrari"),
+  Laps = c(57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 56, 56, 56, 56, 41, 0, 0),
+  Time_Retired = c("1:27:29.784", "1:27:44.001", "1:27:45.137", "1:28:13.287", "1:28:18.144", "1:28:28.200", "1:28:41.558", "1:28:45.731", "1:28:55.295", "1:28:59.349", "1:29:00.820", "1:29:01.468", "1:29:10.182", "1:27:40.414", "1:27:48.126", "1:27:54.253", "1:28:06.276", "DNF", "DNF", "DNS"),
+  Gap = c(NA, "+4.833s", "+5.969s", "+34.119s", "+38.976s", "+49.032s", "+1:02.390s", "+1:06.563s", "+1:16.127s", "+1:20.181s", "+1:21.652s", "+1:22.300s", "+1:31.014s", "1 Lap", "1 Lap", "1 Lap", "1 Lap", "DNF", "DNF", "DNF"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    Speed_mph = c(131.3, 131.2, 131.1, 130.4, 130.3, 130.0, 129.7, 129.6, 129.4, 129.3, 129.2, 129.2, 129.0, 128.9, 128.7, 128.5, 128.2, NA, NA, NA)
+)
+Qatar$Time_Retired[Qatar$Time_Retired == "DNF"] <- 0
+Qatar$Time_Retired[Qatar$Time_Retired == "DNS"] <- 0
+Qatar$Gap[Qatar$Gap == "0s"] <- NA
+Qatar <- Qatar %>%
+  arrange(Time_Retired)
+
+Qatar$Driver <- factor(Qatar$Driver, levels = Qatar$Driver[order(Qatar$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Qatar <- Qatar %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Qatar$Team <- as.factor(Qatar$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Qatar,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
 Qatar <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Max Verstappen", "Oscar Piastri", "Lando Norris", "George Russell", "Charles Leclerc", "Fernando Alonso", "Esteban Ocon", "Valtteri Bottas", "Zhou Guanyu", "Sergio Perez", "Lance Stroll", "Pierre Gasly", "Alex Albon", "Kevin Magnussen", "Yuki Tsunoda", "Nico Hulkenberg", "Liam Lawson", "Logan Sargeant", "Lewis Hamilton", "Carlos Sainz"),

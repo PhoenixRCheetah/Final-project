@@ -11,12 +11,62 @@ execute:
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
-  library(ggplot2)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
 ```{r}
 #|label: Singapore tibble
+Singapore <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19),
+  Driver = c("Carlos Sainz", "Lando Norris", "Lewis Hamilton", "Charles Leclerc", "Max Verstappen", "Pierre Gasly", "Oscar Piastri", "Sergio Perez", "Liam Lawson", "Kevin Magnussen", "Alexander Albon", "Zhou Guanyu", "Logan Sargeant", "Fernando Alonso", "George Russell", "Esteban Ocon", "Valtteri Bottas", "Nico Hulkenberg", "Yuki Tsunoda"),
+  Team = c("Ferrari", "McLaren", "Mercedes", "Ferrari", "Red Bull Racing", "Alpine", "McLaren", "Red Bull Racing", "RB", "Haas", "Williams", "Alfa Romeo", "Williams", "Aston Martin", "Mercedes", "Alpine", "Alfa Romeo", "Haas", "RB"),
+  Laps = c(62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 61, 51, 42, 0),
+  Time_Retired = c("1:46:37.418", "1:46:38.230", "1:46:38.687", "1:46:58.595", "1:46:58.859", "1:47:15.859", "1:47:18.897", "1:47:36.952", "1:47:43.336", "1:47:49.534", "1:47:50.835", "1:48:01.067", "1:48:03.619", "1:48:03.619", "1:48:05.021", "DNF", "DNF", "DNF", "DNF"),
+  Gap = c("+0s", "+0.812s", "+1.269s", "+21.177s", "+21.441s", "+38.441s", "+41.479s", "+59.534s", "+1:05.918s", "+1:12.116s", "+1:13.417s", "+1:23.649s", "+1:26.201s", "+1:26.201s", "+1:27.603s", "+DNF", "+DNF", "+DNF", "+DNF"),
+  Points = c(25, 18, 16, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(107.2, 107.1, 107, 106.7, 106.7, 106.4, 106.3 , 106, 105.9, 105.8 , 105.7 , 105.6, 105.5 , 105.5 , 105.5 , 106.9, 104.7 , 105.8, NA)
+)
+Singapore$Time_Retired[Singapore$Time_Retired == "DNF"] <- 0
+Singapore$Gap[Singapore$Gap == "0s"] <- NA
+Singapore <- Singapore %>%
+  arrange(Time_Retired)
+
+Singapore$Driver <- factor(Singapore$Driver, levels = Singapore$Driver[order(Singapore$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Singapore <- Singapore %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Singapore$Team <- as.factor(Singapore$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Singapore,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
 Singapore <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19),
   Driver = c("Carlos Sainz", "Lando Norris", "Lewis Hamilton", "Charles Leclerc", "Max Verstappen", "Pierre Gasly", "Oscar Piastri", "Sergio Perez", "Liam Lawson", "Kevin Magnussen", "Alexander Albon", "Zhou Guanyu", "Logan Sargeant", "Fernando Alonso", "George Russell", "Esteban Ocon", "Valtteri Bottas", "Nico Hulkenberg", "Yuki Tsunoda"),
