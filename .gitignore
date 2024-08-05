@@ -6,3 +6,5 @@
 /.quarto/
 *.Rproj
 _quarto.yml
+*_cache
+*_files

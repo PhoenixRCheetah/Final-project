@@ -11,12 +11,64 @@ execute:
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
-  library(ggplot2)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
 ```{r}
 #|label: British tibble
+British <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lando Norris", "Lewis Hamilton", "Oscar Piastri", "George Russell", "Sergio Perez", "Fernando Alonso", "Alexander Albon", "Charles Leclerc", "Carlos Sainz", "Logan Sargeant", "Valtteri Bottas", "Nico Hulkenberg", "Lance Stroll", "Zhou Guanyu", "Yuki Tsunoda", "Nyck de Vries", "Pierre Gasly", "Kevin Magnussen", "Esteban Ocon"),
+  Team = c("Red Bull Racing", "McLaren", "Mercedes", "McLaren", "Mercedes", "Red Bull Racing", "Aston Martin", "Williams", "Ferrari", "Ferrari", "Williams", "Alfa Romeo", "Haas", "Aston Martin", "Alfa Romeo", "RB", "RB", "Alpine", "Haas", "Alpine"),
+  Laps = c(52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 46, 31, 19),
+  Time_Retired = c("1:25:16.938", "1:25:20.736", "1:25:23.721", "1:25:24.714", "1:25:28.144", "1:25:29.820", "1:25:34.131", "1:25:34.816", "1:25:35.627", "1:25:36.386", "1:25:40.570", "1:25:42.768", "1:25:43.601", "1:25:44.421", "1:25:46.758", "1:25:48.163", "1:25:50.066", "DNF", "DNF", "DNF"),
+  Gap = c(NA, "+3.798s", "+6.783s", "+7.776s", "+11.206s", "+12.882s", "+17.193s", "+17.878s", "+18.689s", "+19.448s", "+23.632s", "+25.830s", "+26.663s", "+27.483s", "+29.820s", "+31.225s", "+33.128s", "DNF", "DNF", "DNF"),
+    Points = c(26, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(133.9, 133.7, 133.7, 133.6, 133.5, 133.5, 133.4, 133.4, 133.4, 133.3, 133.2, 133.2, 133.2, 133.1, 133.1, 133.0, 133.0, 130.1, 139.0, 138.2)
+)
+
+British$Time_Retired[British$Time_Retired == "DNF"] <- 0
+British$Gap[British$Gap == "0s"] <- NA
+British <- British %>%
+  arrange(Time_Retired)
+
+British$Driver <- factor(British$Driver, levels = British$Driver[order(British$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+British <- British %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+British$Team <- as.factor(British$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = British,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+
+```
+
+```{r}
 British <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Max Verstappen", "Lando Norris", "Lewis Hamilton", "Oscar Piastri", "George Russell", "Sergio Perez", "Fernando Alonso", "Alexander Albon", "Charles Leclerc", "Carlos Sainz", "Logan Sargeant", "Valtteri Bottas", "Nico Hulkenberg", "Lance Stroll", "Zhou Guanyu", "Yuki Tsunoda", "Nyck de Vries", "Pierre Gasly", "Kevin Magnussen", "Esteban Ocon"),
@@ -47,3 +99,6 @@ ggplot(British, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fil
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 [Data](https://www.motorsport.com/f1/results/2023/british-gp-625312/)
+```{r}
+fixef(fit_race_1)
+```
