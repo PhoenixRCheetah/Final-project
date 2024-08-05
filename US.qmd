@@ -12,6 +12,9 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
   library(ggplot2)
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
@@ -33,6 +36,56 @@ United_States$Time_Retired[United_States$Time_Retired == "DNF"] <- 0
 United_States$Gap[United_States$Gap == "0s"] <- NA
 United_States <- United_States %>%
   arrange(Time_Retired)
+
+
+United_States$Driver <- factor(United_States$Driver, levels = United_States$Driver[order(United_States$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+United_States <- United_States %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+United_States$Team <- as.factor(United_States$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = United_States,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
+United_States <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lewis Hamilton", "Charles Leclerc", "Sergio Perez", "George Russell", "Lando Norris", "Fernando Alonso", "Esteban Ocon", "Valtteri Bottas", "Pierre Gasly", "Alex Albon", "Oscar Piastri", "Kevin Magnussen", "Lance Stroll", "Nico Hülkenberg", "Yuki Tsunoda", "Zhou Guanyu", "Logan Sargeant", "Nyck de Vries", "Liam Lawson"),
+  Team = c("Red Bull Racing", "Mercedes", "Ferrari", "Red Bull Racing", "Mercedes", "McLaren", "Aston Martin", "Alpine", "Alfa Romeo", "Alpine", "Williams", "McLaren", "Haas", "Aston Martin", "Haas", "AlphaTauri", "Alfa Romeo", "Williams", "AlphaTauri", "AlphaTauri"),
+  Laps = c(56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56),
+  Time_Retired = c("1:34:45.763", "1:34:55.894", "1:35:01.237", "1:35:04.128", "1:35:09.573", "1:35:13.762", "1:35:18.412", "1:35:20.123", "1:35:22.189", "1:35:24.287", "1:35:26.459", "1:35:28.571", "1:35:30.682", "1:35:32.790", "1:35:35.892", "1:35:38.762", "1:35:41.893", "1:35:45.561", "1:35:48.999", "1:35:52.442"),
+  Gap = c("0s", "+10.131s", "+15.474s", "+18.365s", "+23.810s", "+27.999s", "+32.649s", "+34.360s", "+36.426s", "+38.524s", "+40.696s", "+42.808s", "+44.919s", "+47.027s", "+50.129s", "+53.999s", "+56.130s", "+59.798s", "+63.236s", "+66.679s"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(132.8, 132.5, 132.2, 132.1, 131.8, 131.7, 131.6, 131.5, 131.4, 131.3, 131.2, 131.1, 131.0, 130.9, 130.8, 130.7, 130.6, 130.5, 130.4, 130.3)
+)
+
+United_States$Time_Retired[United_States$Time_Retired == "DNF"] <- 0
+United_States$Gap[United_States$Gap == "0s"] <- NA
+United_States <- United_States %>%
+  arrange(Time_Retired)
+
 ```
 
 ```{r}

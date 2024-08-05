@@ -12,6 +12,9 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
   library(ggplot2)
+  library(brms)
+  library(forcats)
+  library(tidybayes)
   })
 ```
 
@@ -35,6 +38,53 @@ Spanish$Gap[Spanish$Gap == "0s"] <- NA
 Spanish <- Spanish %>%
   arrange(Time_Retired)
 
+Spanish$Driver <- factor(Spanish$Driver, levels = Spanish$Driver[order(Spanish$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Spanish <- Spanish %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Spanish$Team <- as.factor(Spanish$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Spanish,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
+Spanish <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lewis Hamilton", "George Russell", "Sergio Perez", "Carlos Sainz", "Lance Stroll", "Fernando Alonso", "Esteban Ocon", "Zhou Guanyu", "Pierre Gasly", "Charles Leclerc", "Yuki Tsunoda", "Oscar Piastri", "Nyck de Vries", "Nico Hülkenberg", "Alex Albon", "Lando Norris", "Kevin Magnussen", "Valtteri Bottas", "Logan Sargeant"),
+  Team = c("Red Bull Racing", "Mercedes", "Mercedes", "Red Bull Racing", "Ferrari", "Aston Martin", "Aston Martin", "Alpine", "Alfa Romeo", "Alpine", "Ferrari", "RB", "McLaren", "RB", "Haas", "Williams", "McLaren", "Haas", "Alfa Romeo", "Williams"),
+  Laps = c(66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66),
+  Time_Retired = c("1:27:57.945", "1:28:17.531", "1:28:19.159", "1:28:23.605", "1:28:27.591", "1:28:30.112", "1:28:32.593", "1:28:34.735", "1:28:36.869", "1:28:39.126", "1:28:42.379", "1:28:44.215", "1:28:46.581", "1:28:48.331", "1:28:51.451", "1:28:53.215", "1:28:55.114", "1:28:58.334", "1:29:01.745", "1:29:05.175"),
+  Gap = c("0s", "+19.586s", "+21.214s", "+25.660s", "+29.646s", "+32.167s", "+34.648s", "+36.790s", "+38.924s", "+41.181s", "+44.434s", "+46.270s", "+48.636s", "+50.386s", "+53.506s", "+55.270s", "+57.169s", "+60.389s", "+63.800s", "+67.230s"),
+  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(129.2, 129.1, 129.0, 128.9, 128.8, 128.8, 128.7, 128.7, 128.6, 128.5, 128.5, 128.4, 128.3, 128.2, 128.2, 128.1, 128.1, 128.0, 127.9, 127.9)
+)
+
+Spanish$Time_Retired[Spanish$Time_Retired == "DNF"] <- 0
+Spanish$Gap[Spanish$Gap == "0s"] <- NA
+Spanish <- Spanish %>%
+  arrange(Time_Retired)
 ```
 
 ```{r}
