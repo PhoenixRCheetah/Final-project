@@ -5,9 +5,6 @@ execute:
 ---
 
 ```{r}
-#|label: setup
-#|message: false
-
 suppressPackageStartupMessages({
   library(tidyverse)
   library(dplyr)
@@ -15,12 +12,12 @@ suppressPackageStartupMessages({
   library(brms)
   library(forcats)
   library(tidybayes)
+  library(gtsummary)
   })
 ```
 
-```{r}
-#| label: Azerbaij tibble
 
+```{r}
 Azerbaij <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Sergio Perez", "Max Verstappen", "Charles Leclerc", "Fernando Alonso", "Carlos Sainz", "Lewis Hamilton", "Lance Stroll", "George Russell", "Lando Norris", "Yuki Tsunoda", "Oscar Piastri", "Alex Albon", "Kevin Magnussen", "Pierre Gasly", "Esteban Ocon", "Logan Sargeant", "Nico Hulkenberg", "Valtteri Bottas", "Nyck de Vries", "Zhou Guanyu"),
@@ -35,18 +32,39 @@ Azerbaij$Time_Retired[Azerbaij$Time_Retired == "DNF"] <- 0
 Azerbaij$Gap[Azerbaij$Gap == "0s"] <- NA
 Azerbaij <- Azerbaij %>%
   arrange(Time_Retired)
+Azerbaij$Driver <- factor(Azerbaij$Driver, levels = Azerbaij$Driver[order(Azerbaij$Time_Retired)])
 ```
 
 ```{r}
-#| label: Azerbaij plot
-ggplot(Azerbaij, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Azerbaijan GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time",
-       color = NA)+
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#| cache: TRUE
+#| label: model
+
+
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Azerbaij <- Azerbaij %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Azerbaij$Team <- as.factor(Azerbaij$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Azerbaij,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
 ```
-[Data](https://www.motorsport.com/f1/results/2023/azerbaijan-gp-625284/)
+
+```{r}
+fixef(fit_race_1)
+```

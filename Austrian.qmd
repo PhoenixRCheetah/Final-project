@@ -20,55 +20,7 @@ suppressPackageStartupMessages({
 
 ```{r}
 #|label: Austrian tibble
-Austrian <- tibble(
-  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-  Driver = c("Max Verstappen", "Charles Leclerc", "Sergio Perez", "Lando Norris", "Fernando Alonso", "Carlos Sainz", "George Russell", "Lewis Hamilton", "Lance Stroll", "Pierre Gasly", "Alex Albon", "Zhou Guanyu", "Logan Sargeant", "Esteban Ocon", "Valtteri Bottas", "Oscar Piastri", "Nyck de Vries", "Kevin Magnussen", "Yuki Tsunoda", "Nico Hülkenberg"),
-  Team = c("Red Bull Racing", "Ferrari", "Red Bull Racing", "McLaren", "Aston Martin", "Ferrari", "Mercedes", "Mercedes", "Aston Martin", "Alpine", "Williams", "Alfa Romeo", "Williams", "Alpine", "Alfa Romeo", "McLaren", "RB", "Haas", "RB", "Haas"),
-  Laps = c(rep(71, 11), rep(70, 8), 12),
-  Time_Retired = c("1:25:33.607", "1:25:38.762", "1:25:50.795", "1:25:59.934", "1:26:03.924", "1:26:04.984", "1:26:22.010", "1:26:22.803", "1:26:32.650", "1:26:41.274", "1:26:53.374", "1:25:58.240", "1:26:04.991", "1:26:15.747", "1:26:16.384", "1:26:20.176", "1:26:23.310", "1:26:30.260", "1:26:33.480", "DNF"),
-  Gap = c(NA, "+5.155s", "+17.188s", "+26.327s", "+30.317s", "+31.377s", "+48.403s", "+49.196s", "+59.043", "+1:07.667", "+1:19.767", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "DNF"),
-  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, rep(0, 10)),
-  Speed_mph = c(133.5, 133.4, 133.1, 132.9, 132.8, 132.7, 132.3, 132.3, 132.0, 131.8, 131.5, 131.0, 130.9, 130.6, 130.6, 130.5, 130.4, 130.2, 130.1, 117.4)
-)
 
-Austrian$Time_Retired[Austrian$Time_Retired == "DNF"] <- 0
-Austrian$Gap[Austrian$Gap == "0s"] <- NA
-Austrian <- Austrian %>%
-  arrange(Time_Retired)
-
-Austrian$Driver <- factor(Austrian$Driver, levels = Austrian$Driver[order(Austrian$Time_Retired)])
-```
-
-```{r}
-
-#| cache: TRUE
-#| label: model
-convert_to_seconds <- function(time_str) {
-  if (is.na(time_str) || time_str == "DNF") return(NA)
-  parts <- unlist(strsplit(time_str, ":"))
-  minutes <- as.numeric(parts[1])
-  seconds <- as.numeric(parts[2])
-  milliseconds <- as.numeric(parts[3])
-  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
-  return(total_seconds)
-}
-
-Austrian <- Austrian %>%
-  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
-
-
-Austrian$Team <- as.factor(Austrian$Team)
-
-
-fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
-                  data = Austrian,
-                  family = gaussian(),
-                  refresh = 0,
-                  silent = 2,
-                  seed = 9)
-```
-
-```{r}
 Austrian <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Max Verstappen", "Charles Leclerc", "Sergio Perez", "Lando Norris", "Fernando Alonso", "Carlos Sainz", "George Russell", "Lewis Hamilton", "Lance Stroll", "Pierre Gasly", "Alex Albon", "Zhou Guanyu", "Logan Sargeant", "Esteban Ocon", "Valtteri Bottas", "Oscar Piastri", "Nyck de Vries", "Kevin Magnussen", "Yuki Tsunoda", "Nico Hülkenberg"),
@@ -100,6 +52,3 @@ ggplot(Austrian, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fi
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 [Data](https://www.motorsport.com/f1/results/2023/austrian-gp-625308/)
-```{r}
-fixef(fit_race_1)
-```
