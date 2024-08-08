@@ -1,6 +1,6 @@
 ---
 title: "F1 2023 Season Analysis"
-author: "Your Name"
+author: "Roshan Ranganathan"
 format: html
 execute:
   echo: false
