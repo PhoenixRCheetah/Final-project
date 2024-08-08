@@ -15,12 +15,11 @@ suppressPackageStartupMessages({
   library(brms)
   library(forcats)
   library(tidybayes)
+  library(gtsummary)
   })
 ```
 
 ```{r}
-#|label: Bahrain
-
 Bahrain <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Max Verstappen", "Sergio Perez", "Fernando Alonso", "Carlos Sainz", "Lewis Hamilton", "Lance Stroll", "George Russell", "Valtteri Bottas", "Pierre Gasly", "Alex Albon", "Yuki Tsunoda", "Logan Sargeant", "Kevin Magnussen", "Nyck de Vries", "Nico Hülkenberg", "Zhou Guanyu", "Lando Norris", "Esteban Ocon", "Charles Leclerc", "Oscar Piastri"),
@@ -36,20 +35,40 @@ Bahrain$Gap[Bahrain$Gap == "0s"] <- NA
 Bahrain <- Bahrain %>%
   arrange(Time_Retired)
 
-
+Bahrain$Driver <- factor(Bahrain$Driver, levels = Bahrain$Driver[order(Bahrain$Time_Retired)])
 ```
 
 ```{r}
-#|label: Bahrian plot
-ggplot(Bahrain, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Bahrain GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time",
-       color = NA)+
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#| cache: TRUE
+#| label: model
 
+
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Bahrain <- Bahrain %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Bahrain$Team <- as.factor(Bahrain$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Bahrain,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
 ```
-[Data](https://www.motorsport.com/f1/results/2023/bahrain-gp-625268/)
+
+```{r}
+fixef(fit_race_1)
+```
+
