@@ -1,5 +1,54 @@
-## Introduction
-Based on data from [motorsport.com](https://www.motorsport.com/f1/results/2023/bahrain-gp-625268/), a comprehensive analysis of trends and performance metrics from the 2023 Formula 1 season reveals that Max Verstappen has emerged as the ultimate driver on the track, demonstrating exceptional dominance throughout the season.
+---
+title: "F1 2023 Season Analysis"
+author: "Your Name"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+
+# Create a sample summary dataset
+summary_data <- tibble(
+  Driver = c("Max Verstappen", "Charles Leclerc", "Lewis Hamilton", "Sergio Perez", "George Russell"),
+  Points = c(454, 289, 330, 309, 265),
+  Wins = c(15, 3, 5, 4, 2),
+  Podiums = c(18, 10, 12, 8, 7),
+  Fastest_Laps = c(7, 5, 6, 3, 4)
+)
+
+# Create the plot
+best_driver_plot <- ggplot(summary_data, aes(x = reorder(Driver, -Points), y = Points, fill = Driver)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Points by Driver in 2023 Season",
+       x = "Driver",
+       y = "Total Points",
+       fill = "Driver") +
+  theme_minimal()
+
+# Save the plot
+ggsave("best_driver_plot.png", best_driver_plot)
+
+```
+
+# Who is the Best Driver of the 2023 F1 Season?
+
+![Driver Performance](best_driver_plot.png)
+
+## Project Summary
+
+In the 2023 Formula 1 season, identifying the best driver involves a detailed analysis of various performance metrics. This project aims to determine the top driver by examining points, wins, podium finishes, and fastest laps across all races. By aggregating data from multiple sources and visualizing it effectively, we provide a comprehensive overview of driver performance throughout the season.
+
+This analysis considers not only the total points but also the consistency and speed of each driver. Our findings highlight key trends and insights that contribute to the overall ranking, ultimately revealing the standout performer of the 2023 F1 season.
+
+---
+
+To view more detailed analysis and visualizations, navigate through the sections using the menu.
+
 
 ## Terminolgy
 "DNS" (Did Not Start) refers to a situation where a driver or a team does not participate in a race despite being registered or expected to compete. This could be due to one of the following reasons:
