@@ -35,20 +35,40 @@ Italian$Time_Retired[Italian$Time_Retired == "DNF"] <- 0
 Italian$Gap[Italian$Gap == "0s"] <- NA
 Italian <- Italian %>%
   arrange(Time_Retired)
+
+Italian$Driver <- factor(Italian$Driver, levels = Italian$Driver[order(Italian$Time_Retired)])
 ```
 
 ```{r}
-#|label: Italian plot
-ggplot(Italian, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Italian GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time",
-       color = NA) +
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-[Data](https://www.motorsport.com/f1/results/2023/italian-gp-625337/)
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
 
+Italian <- Italian %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Italian$Team <- as.factor(Italian$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Italian,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+
+```
+
+```{r}
+fixef(fit_race_1)
+```
 

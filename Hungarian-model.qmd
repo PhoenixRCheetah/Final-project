@@ -1,0 +1,74 @@
+---
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#|label: setup
+#|message: false
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(dplyr)
+  library(ggplot2)  
+  library(brms)
+  library(forcats)
+  library(tidybayes)
+  })
+```
+
+```{r}
+#|label: Hungarian tibble
+Hungarian <- tibble(
+  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+  Driver = c("Max Verstappen", "Lando Norris", "Sergio Perez", "Lewis Hamilton", "Oscar Piastri", "George Russell", "Charles Leclerc", "Carlos Sainz", "Fernando Alonso", "Lance Stroll", "Alexander Albon", "Valtteri Bottas", "Daniel Ricciardo", "Nico Hulkenberg", "Yuki Tsunoda", "Zhou Guanyu", "Kevin Magnussen", "Logan Sargeant", "Esteban Ocon", "Pierre Gasly"),
+  Team = c("Red Bull Racing", "McLaren", "Red Bull Racing", "Mercedes", "McLaren", "Mercedes", "Ferrari", "Ferrari", "Aston Martin", "Aston Martin", "Williams", "Alfa Romeo", "RB", "Haas", "RB", "Alfa Romeo", "Haas", "Williams", "Alpine", "Alpine"),
+  Laps = c(70, 70, 70, 70, 70, 70, 70, 70, 70, 69, 69, 69, 69, 69, 69, 69, 69, 67, 12, 1),
+  Time_Retired = c("1:38:08.634", "1:38:42.365", "1:38:46.237", "1:38:47.768", "1:39:11.206", "1:39:14.459", "1:39:18.951", "1:39:19.707", "1:39:24.343", "1:38:23.249", "1:38:37.721", "1:38:38.713", "1:38:44.891", "1:38:59.932", "1:39:00.177", "1:39:09.125", "1:39:30.985", "DNF", "DNF", "DNF"),
+  Gap = c(NA, "+33.731s", "+37.603s", "+39.134s", "+1:02.572", "+1:05.825", "+1:10.317", "+1:11.073", "+1:15.709", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "+1 Lap", "DNF", "DNF", "DNF"),
+  Points = c(26, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  Speed_mph = c(187.457, 186.389, 186.267, 186.219, 185.486, 185.385, 185.245, 185.221, 185.077, 184.321, 183.870, 183.840, 183.648, 183.183, 183.175, 182.900, 182.230, 182.503, 150.851, 125.039)
+)
+
+Hungarian$Time_Retired[Hungarian$Time_Retired == "DNF"] <- 0
+Hungarian$Gap[Hungarian$Gap == "0s"] <- NA
+Hungarian <- Hungarian %>%
+  arrange(Time_Retired)
+
+Hungarian$Driver <- factor(Hungarian$Driver, levels = Hungarian$Driver[order(Hungarian$Time_Retired)])
+```
+
+```{r}
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Hungarian <- Hungarian %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Hungarian$Team <- as.factor(Hungarian$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Hungarian,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+
+```
+
+```{r}
+fixef(fit_race_1)
+```
+
