@@ -20,7 +20,6 @@ suppressPackageStartupMessages({
 
 ```{r}
 #| label: Saudhi Arabia tibble
-
 Saudhi_Arabia <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Sergio Perez", "Max Verstappen", "Fernando Alonso", "George Russell", "Lewis Hamilton", "Carlos Sainz", "Charles Leclerc", "Esteban Ocon", "Pierre Gasly", "Kevin Magnussen", "Yuki Tsunoda", "Lando Norris", "Oscar Piastri", "Nyck de Vries", "Logan Sargeant", "Zhou Guanyu", "Nico Hulkenberg", "Valtteri Bottas", "Alex Albon", "Lance Stroll"),
@@ -36,20 +35,36 @@ Saudhi_Arabia$Time_Retired[Saudhi_Arabia$Time_Retired == "DNF"] <- 0
 Saudhi_Arabia$Gap[Saudhi_Arabia$Gap == "0s"] <- NA
 Saudhi_Arabia <- Saudhi_Arabia %>%
   arrange(Time_Retired)
+
+Saudhi_Arabia$Driver <- factor(Saudhi_Arabia$Driver, levels = Saudhi_Arabia$Driver[order(Saudhi_Arabia$Time_Retired)])
+
 ```
 
 ```{r}
-#| label: Saudhi Arabia plot
-ggplot(Saudhi_Arabia, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Saudhi Arabia GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time (Seconds)",
-       color = NA) +
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-[Data](https://www.motorsport.com/f1/results/2023/saudi-arabian-gp-625272/)
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
 
+Saudhi_Arabia <- Saudhi_Arabia %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Saudhi_Arabia$Team <- as.factor(Saudhi_Arabia$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Saudhi_Arabia,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
 
