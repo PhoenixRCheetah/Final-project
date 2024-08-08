@@ -36,21 +36,39 @@ Australia$Time_Retired[Australia$Time_Retired == "DNF"] <- 0
 Australia$Gap[Australia$Gap == "0s"] <- NA
 Australia <- Australia %>%
   arrange(Time_Retired)
-```
 
+Australia$Driver <- factor(Australia$Driver, levels = Australia$Driver[order(Australia$Time_Retired)])
+```
 
 ```{r}
-#| label: Australia plot
-ggplot(Australia, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Australian GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time",
-       color = NA)+
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-[Data](https://www.motorsport.com/f1/results/2023/australian-gp-625276/)
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
 
+Australia <- Australia %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Australia$Team <- as.factor(Australia$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Australia,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+```
+
+```{r}
+fixef(fit_race_1)
+```
 
