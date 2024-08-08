@@ -20,7 +20,6 @@ suppressPackageStartupMessages({
 
 ```{r}
 #| label: Miami tibble
-
 Miami <- tibble(
   Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
   Driver = c("Max Verstappen", "Sergio Perez", "Fernando Alonso", "George Russell", "Carlos Sainz", "Lewis Hamilton", "Charles Leclerc", "Pierre Gasly", "Esteban Ocon", "Kevin Magnussen", "Yuki Tsunoda", "Alexander Albon", "Nico Hülkenberg", "Lance Stroll", "Zhou Guanyu", "Logan Sargeant", "Valtteri Bottas", "Oscar Piastri", "Nyck de Vries", "Lando Norris"),
@@ -35,18 +34,39 @@ Miami$Time_Retired[Miami$Time_Retired == "DNF"] <- 0
 Miami$Gap[Miami$Gap == "0s"] <- NA
 Miami <- Miami %>%
   arrange(Time_Retired)
+
+Miami$Driver <- factor(Miami$Driver, levels = Miami$Driver[order(Miami$Time_Retired)])
 ```
 
 ```{r}
-#| label: Miami plot
-ggplot(Miami, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired, fill = Driver)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Miami GP 2023",
-       subtitle = "Drivers with no lap time did not finish (DNF), or did not start (DNS)",
-       x = "Driver",
-       y = "Finishing Time",
-       color = NA)+
-  guides(fill = FALSE) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#| cache: TRUE
+#| label: model
+convert_to_seconds <- function(time_str) {
+  if (is.na(time_str) || time_str == "DNF") return(NA)
+  parts <- unlist(strsplit(time_str, ":"))
+  minutes <- as.numeric(parts[1])
+  seconds <- as.numeric(parts[2])
+  milliseconds <- as.numeric(parts[3])
+  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
+  return(total_seconds)
+}
+
+Miami <- Miami %>%
+  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
+
+
+Miami$Team <- as.factor(Miami$Team)
+
+
+fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
+                  data = Miami,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
 ```
-[Data](https://www.motorsport.com/f1/results/2023/miami-gp-625288/)
+
+```{r}
+fixef(fit_race_1)
+```
+
