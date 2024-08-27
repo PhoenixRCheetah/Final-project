@@ -37,57 +37,6 @@ Brazilian_GP$Time_Retired[Brazilian_GP$Time_Retired == "DNF"] <- 0
 Brazilian_GP$Gap[Brazilian_GP$Gap == "0s"] <- NA
 Brazilian_GP <- Brazilian_GP %>%
   arrange(Time_Retired)
-
-
-Brazilian_GP$Driver <- factor(Brazilian_GP$Driver, levels = Brazilian_GP$Driver[order(Brazilian_GP$Time_Retired)])
-```
-
-```{r}
-#| cache: TRUE
-#| label: model
-convert_to_seconds <- function(time_str) {
-  if (is.na(time_str) || time_str == "DNF") return(NA)
-  parts <- unlist(strsplit(time_str, ":"))
-  minutes <- as.numeric(parts[1])
-  seconds <- as.numeric(parts[2])
-  milliseconds <- as.numeric(parts[3])
-  total_seconds <- minutes * 60 + seconds + milliseconds / 1000
-  return(total_seconds)
-}
-
-Brazilian_GP <- Brazilian_GP %>%
-  mutate(Time_Retired = sapply(Time_Retired, convert_to_seconds))
-
-
-Brazilian_GP$Team <- as.factor(Brazilian_GP$Team)
-
-
-fit_race_1 <- brm(formula = Time_Retired ~ Position + Team + Laps + Points + Speed_mph,
-                  data = Brazilian_GP,
-                  family = gaussian(),
-                  refresh = 0,
-                  silent = 2,
-                  seed = 9)
-
-```
-
-```{r}
-Brazilian_GP <- tibble(
-  Position = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-  Driver = c("Max Verstappen", "Lewis Hamilton", "Charles Leclerc", "Sergio Perez", "Carlos Sainz", "Lando Norris", "George Russell", "Fernando Alonso", "Esteban Ocon", "Valtteri Bottas", "Pierre Gasly", "Alex Albon", "Oscar Piastri", "Kevin Magnussen", "Lance Stroll", "Nico Hülkenberg", "Yuki Tsunoda", "Zhou Guanyu", "Logan Sargeant", "Nyck de Vries"),
-  Team = c("Red Bull Racing", "Mercedes", "Ferrari", "Red Bull Racing", "Ferrari", "McLaren", "Mercedes", "Aston Martin", "Alpine", "Alfa Romeo", "Alpine", "Williams", "McLaren", "Haas", "Aston Martin", "Haas", "AlphaTauri", "Alfa Romeo", "Williams", "AlphaTauri"),
-  Laps = c(71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71),
-  Time_Retired = c("1:36:19.734", "1:36:29.835", "1:36:34.259", "1:36:37.401", "1:36:40.813", "1:36:45.932", "1:36:49.101", "1:36:52.563", "1:36:55.134", "1:36:58.237", "1:37:01.459", "1:37:04.761", "1:37:07.892", "1:37:11.093", "1:37:14.299", "1:37:17.491", "1:37:20.674", "1:37:24.901", "1:37:28.134", "1:37:31.567"),
-  Gap = c("0s", "+10.101s", "+14.525s", "+17.667s", "+20.879s", "+26.098s", "+29.267s", "+32.729s", "+35.300s", "+38.403s", "+41.625s", "+44.927s", "+48.058s", "+51.259s", "+54.465s", "+57.657s", "+60.840s", "+65.067s", "+68.300s", "+71.733s"),
-  Points = c(25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-  Fastest_Lap = c("1:18.734", "1:18.835", "1:19.259", "1:19.401", "1:19.813", "1:20.932", "1:21.101", "1:21.563", "1:22.134", "1:22.237", "1:23.459", "1:23.761", "1:24.892", "1:25.093", "1:26.299", "1:27.491", "1:28.674", "1:29.901", "1:30.134", "1:31.567"),
-  Speed_mph = c(131.5, 131.3, 130.8, 130.6, 130.3, 130.0, 129.8, 129.7, 129.4, 129.3, 129.0, 128.9, 128.7, 128.5, 128.3, 128.1, 127.9, 127.7, 127.6, 127.5)
-)
-
-Brazilian_GP$Time_Retired[Brazilian_GP$Time_Retired == "DNF"] <- 0
-Brazilian_GP$Gap[Brazilian_GP$Gap == "0s"] <- NA
-Brazilian_GP <- Brazilian_GP %>%
-  arrange(Time_Retired)
 ```
 
 ```{r}
@@ -105,6 +54,3 @@ ggplot(Brazilian_GP, aes(x = fct_reorder(Driver, Time_Retired), y = Time_Retired
 
 ```
 [Data](https://www.motorsport.com/f1/results/2023/brazilian-gp-625361/)
-```{r}
-fixef(fit_race_1)
-```
